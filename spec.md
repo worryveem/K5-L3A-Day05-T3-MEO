@@ -11,7 +11,7 @@
 |---|---|---|
 | Nguyễn Đăng Doanh | 2A202603597 | §1, §2, §4: lát cắt và phạm vi, 13 kịch bản, chọn 2 kịch bản đắt nhất, mức tự chủ cho 5 tool.|
 | Vũ Đức Tâm | 2A202603522 | §3, §6: câu AI nói khi sai, phân loại lỗi, nguyên tắc HAX/PAIR, 3 tiêu chí Pass/Fail. Chụp và đánh số ảnh prototype|
-| Đõ Minh Hoàng | 2A202603554 | §5: dựng prototype HTML cho KB-A (số chỗ, đồng hồ giữ chỗ, màn xác nhận, nút chuyển nhân viên), lập luận cách hiện |
+| Đỗ Minh Hoàng | 2A202603554 | §5: dựng prototype HTML cho KB-A (số chỗ, đồng hồ giữ chỗ, màn xác nhận, nút chuyển nhân viên), lập luận cách hiện |
 
 ## §1. Lát cắt & phạm vi
 - Lát cắt (chép từ track): Trong **Đặt chỗ của tôi**, khi **hành khách** vừa nhận tin chuyến bay bị huỷ và nhắn hỏi, **AI đề xuất và giữ chỗ chuyến thay thế, hỏi lại cho rõ, đổi vé, hay chuyển nhân viên**, để khách tới nơi kịp mà không mất vé hay tiền vì một thao tác không đảo lại được.
@@ -355,8 +355,8 @@ Nhóm tách tool này thành hai việc:
 - **Đảo lại được không:** có. Nhân viên trả cuộc chat lại hoặc xử lý xong.
 - **Chờ người thì mất gì:** nếu bắt duyệt thì chính các ca nguy hiểm bị kẹt lại, trong khi việc chuyển người là lối thoát an toàn của cả hệ thống.
 - **Bắt buộc chuyển khi:** trẻ bay một mình hoặc tách hành khách có trẻ em (kịch bản 7) · đổi tên người bay (kịch bản 8) · khách báo trợ lý đổi nhầm (kịch bản 10) · không tách được yêu cầu hoàn theo hành khách (kịch bản 11).
+- **Nhân viên thấy gì khi nhận:** mã đặt chỗ, yêu cầu của khách tóm trong một câu, các chuyến đang giữ chỗ kèm đồng hồ đếm ngược, lần đổi miễn phí còn hay đã dùng, lý do chuyển.
 - **Trong lúc chờ nhân viên:** chỗ giữ vẫn chạy. Khách chỉ thấy "Đã chuyển nhân viên" khi tool xác nhận tiếp nhận, và thấy chỗ đang giữ còn bao lâu. Thời gian chờ ước tính chỉ hiện khi hệ thống hàng chờ cung cấp; không có thì ghi "chưa có ước tính", không bịa số phút.
-- **Trong lúc chờ nhân viên:** chỗ giữ vẫn chạy. Khách được báo thời gian chờ ước tính và biết chỗ đang giữ còn bao lâu.
 - **Phương án đã loại:** *cần duyệt* (lý do ở trên).
 
 ### Tool khó xếp nhất: `doi_chuyen_bay`
@@ -365,7 +365,7 @@ Nhóm tách tool này thành hai việc:
 
 | Thành viên | Chọn | Lý do người đó đưa ra |
 |---|---|---|
-| Tâm | khách duyệt | Chỉ khách biết mình muốn chuyến nào. Nếu AI giữ chỗ trước thì chờ khách bấm không làm mất chỗ |
+| Doanh | khách duyệt | Chỉ khách biết mình muốn chuyến nào. Nếu AI giữ chỗ trước thì chờ khách bấm không làm mất chỗ |
 | Tâm | nhân viên duyệt | Lần đổi miễn phí mất là không lấy lại được, nên cần người có kinh nghiệm kiểm trước khi đổi |
 | Hoàng | tự làm | Khách đang gấp, chuyến sáng mai ít chỗ (BM 205 còn 4). Bắt khách bấm thêm là chậm, dễ mất chỗ |
 
@@ -477,8 +477,7 @@ Mỗi tiêu chí chỉ Pass khi đạt **tất cả điều kiện áp dụng ch
 - Chưa biết tool có giữ đồng thời hai chuyến, giữ đủ hai người và đổi cả hai cùng thành công hay không. Không có bảo đảm đổi nguyên nhóm thì cần chuyển người trước giao dịch có nguy cơ tách mẹ con.
 - Form khách tự gửi/ô chọn từng người đã được thiết kế ở §4 nhưng chưa có triển khai, dữ liệu số tiền cụ thể và hình thức áp dụng cho TRV-7Q2K. Ô chọn không tự chứng minh backend tách vé được; nếu chưa xác minh, chỉ soạn nháp và chuyển người, không giả lập thành công như giao dịch thật.
 - Ảnh §5 hiện là minh hoạ, chưa kiểm tra được timeout, log, gửi trùng và lỗi công cụ. Chuyển nhân viên không bảo đảm cứu được giao dịch đã không đảo được.
-- Số chỗ lúc 15:00 có thể thay đổi; chỗ trên chuyến không bảo đảm ghế cạnh nhau. Không dùng mốc 15:00 để tự suy ra thời hạn 48 giờ bắt đầu lúc đó nếu chính sách chưa xác định.
-- Chưa có track gốc/rubric đầy đủ trong repo để đối chiếu các dữ kiện A chép; không bổ sung chính sách hãng thật từ bên ngoài vào dữ liệu giả lập.
+- Số chỗ lúc 15:00 có thể thay đổi; chỗ trên chuyến không bảo đảm ghế cạnh nhau. Không dùng mốc 15:00 để tự suy ra thời hạn 48 giờ bắt đầu lúc đó nếu chính sách chưa xác định..
 
 ## §7. Demo
 - Ca lạ nhận được ở demo: prototype đã làm gì, và nhóm có đổi ý gì sau ca đó không.
