@@ -151,13 +151,118 @@
 
 **Kịch bản làm nhóm sợ nhất khi demo:** KB-A. Nếu prototype không hiện số chỗ còn lại, chính người xem cũng sẽ bấm "Đổi".
 
-## §3. Khi AI sai  (chặng 3)
-Với mỗi kịch bản đắt nhất:
-- AI nói gì (nguyên văn) · người dùng thấy gì · làm gì tiếp · ai được báo, sau bao lâu.
-- Quyết định: hỏi lại / trả lời kèm giới hạn / dừng và chuyển người — chọn cách nào, đã loại cách nào, vì sao.
-- Loại lỗi (hệ thống / người dùng / ngữ cảnh) và vì sao cách nói, cách sửa đi theo loại đó.
-- 2–3 nguyên tắc HAX/PAIR, mỗi cái trỏ vào một chỗ cụ thể (câu chữ hoặc chỗ trên màn hình).
-- Lỗi nào sửa câu chữ không cứu được (nếu có), và thiết kế cứu nó thế nào.
+## §3. Khi AI sai — B: Vũ Đức Tâm · 2A202603522
+
+### 3.1. Căn cứ và quy ước
+
+Phân tích dùng **kịch bản 5 (KB-A)** và **kịch bản 6 (KB-B)** mà A đã chọn tại §2; bổ sung kịch bản 10 cho nhánh trợ lý đã đổi nhầm. Căn cứ là dữ liệu A ghi tại §2, chưa phải kết quả vận hành của một hãng bay thật:
+
+| Mã | Bằng chứng tại §2 | Ý nghĩa đối với UX |
+|---|---|---|
+| E1 | TRV-7Q2K: Nguyễn Minh An, 34 tuổi; Nguyễn Gia Bình, 5 tuổi. | Mọi xác nhận phải chỉ rõ cả hai người; không ngầm tách mẹ con. |
+| E2 | BM 217, 12/11/2026 21:00: còn 1 chỗ. | Chữ “OK” không làm chuyến này đủ chỗ cho hai người. |
+| E3 | BM 201, 13/11/2026 07:00: 9 chỗ; BM 205, 13/11/2026 09:30: 4 chỗ. | Có hai phương án đủ số chỗ, nhưng AI chưa biết khách muốn phương án nào. |
+| E4 | Đổi miễn phí một lần trong 48 giờ; `doi_chuyen_bay` khó đảo. | Cần xem hậu quả và duyệt đúng phương án trước đổi. |
+| E5 | `gui_yeu_cau_hoan_ve` gửi rồi không huỷ; xử lý tới 90 ngày; về phương thức thanh toán gốc, có ca bằng voucher. | Không tự gửi từ câu chat; chưa biết hình thức hoàn của TRV-7Q2K thì nói rõ chưa xác minh. |
+| E6 | `giu_cho_chuyen_moi` tự nhả sau 20 phút; vé cũ giữ nguyên tới khi đổi xong. | Giữ chỗ là bước tạm, không phải đổi vé; chỉ hiện “đã giữ” sau kết quả thành công. |
+
+Các thời điểm thông báo bên dưới là **quy tắc thiết kế B đề xuất**: ngay lượt phản hồi có kết quả tương ứng, không phải SLA đã đo. §4 cần chốt quyền tool; C cần triển khai và kiểm tra. Số chỗ E2–E3 là dữ liệu tra cứu lúc 15:00 ngày 12/11/2026, không phải cam kết luôn còn chỗ.
+
+### 3.2. KB-A — “ok đổi sang chuyến tối nay luôn”
+
+**Lỗi nguy hiểm:** `doi_chuyen_bay` chạy cho một người hoặc chỉ đổi thành công một vé, tách mẹ khỏi bé và có thể dùng mất lần đổi miễn phí. Bằng chứng: E1, E2, E4 và kịch bản 5 tại §2. Khách đã nêu chuyến tối; điều chưa rõ là họ chấp nhận phương án thay thế nào khi chuyến tối không đủ chỗ.
+
+**AI nói nguyên văn trước khi đổi vé:**
+
+> Tôi chưa đổi vé. BM 217 lúc 21:00 hôm nay, 12/11, chỉ còn 1 chỗ, trong khi đặt chỗ TRV-7Q2K có chị Nguyễn Minh An và bé Nguyễn Gia Bình, 5 tuổi. Tôi sẽ không đổi riêng một người sang chuyến này. Hai chuyến sáng 13/11 là BM 201 lúc 07:00, còn 9 chỗ, và BM 205 lúc 09:30, còn 4 chỗ. Tôi sẽ thử giữ tạm 2 chỗ trên mỗi chuyến trong lúc chị chọn; giữ chỗ chưa phải đổi vé. Chị muốn xem BM 201, BM 205 hay nhờ nhân viên hỗ trợ?
+
+**Trạng thái theo phản hồi giữ chỗ:**
+
+- Trong lúc gọi tool: “Đang kiểm tra và giữ chỗ — chưa đổi vé”. Chưa có đồng hồ “đã giữ”.
+- Nếu cả hai lần giữ thành công: “Đã giữ tạm 2 chỗ trên BM 201 và 2 chỗ trên BM 205. Mỗi phương án tự hết hạn sau 20 phút kể từ lúc giữ thành công. Chưa đổi vé.” Mỗi thẻ có hạn riêng do kết quả tool cung cấp; không dùng chung một mốc nếu hai lần giữ khác thời điểm.
+- Nếu chỉ BM 201 thành công: “Đã giữ 2 chỗ trên BM 201. Chưa giữ được BM 205; chị có thể xem BM 201 hoặc nhờ nhân viên hỗ trợ.” Không đánh dấu BM 205 là đã giữ.
+- Nếu cả hai thất bại: “Tôi chưa giữ được chỗ trên hai chuyến. Vé chưa được đổi. Chị có thể kiểm tra lại chuyến còn chỗ hoặc nhờ nhân viên hỗ trợ.”
+
+Việc giữ cả hai phương án theo kịch bản A là **giữ tạm**, không được tự chọn chuyến để đổi. Cần xác minh tool hỗ trợ giữ đủ hai người và nhiều phương án; nếu không hỗ trợ thì thông báo giới hạn, không giả báo thành công. Không tự gia hạn giữ chỗ liên tục khi khách im lặng.
+
+**Khách thấy gì và làm gì tiếp:**
+
+1. Trạng thái “Chưa đổi vé”, mã đặt chỗ và tên hai hành khách. Thẻ BM 217 ghi “Còn 1 / cần 2 — không đủ cho cả hai”, không có nút đổi một người. Bằng chứng: ảnh minh hoạ B1, số ①–② tại §5.
+2. Hai thẻ BM 201/BM 205 có ngày, giờ, số chỗ theo lần tra cứu và trạng thái giữ riêng. Chọn “Xem BM 201” chỉ mở phương án, chưa gọi đổi. Ảnh B1 số ③–④.
+3. Màn duyệt hiện: TRV-7Q2K; chuyến gốc BM 213 **đã huỷ**; chuyến mới đúng ngày/giờ; tên cả hai người; giữ chỗ còn hiệu lực; “Đổi sẽ dùng lần đổi miễn phí duy nhất”. Nút cuối ghi “Xác nhận đổi cả 2 người sang BM 201 · 07:00 ngày 13/11” nếu đang xem BM 201. Không coi việc vé gốc chưa thay đổi là chuyến gốc vẫn bay.
+4. Có “Chọn lại phương án”. Nút này bỏ xác nhận đang xem, không gọi đổi. Chỗ giữ khác tự hết hạn; không hứa nhả ngay vì bảng tool chưa có chức năng nhả chủ động.
+5. Trước lệnh đổi phải kiểm tra lại hạn giữ và khả năng đổi đủ hai người. Hết hạn hoặc số người không khớp thì vô hiệu xác nhận và yêu cầu kiểm tra lại. Chỉ báo “Đã đổi vé” khi kết quả tool xác nhận đủ hai người; kết quả chưa rõ thì tra cứu, không tự gửi lệnh đổi lần hai.
+
+**Ai được báo, khi nào:** khách thấy mâu thuẫn 1/2 chỗ ngay phản hồi sau tra cứu; sau mỗi kết quả giữ/đổi phải thấy đúng trạng thái ở lượt tiếp theo. Không mặc định chuyển nhân viên nếu khách có thể chọn phương án. Khi khách yêu cầu hỗ trợ, tool không hỗ trợ đổi an toàn cho hai người hoặc khách báo đổi nhầm, bắt đầu `chuyen_nhan_vien` trong lượt xử lý đó. Nhân viên nhận mã đặt chỗ, yêu cầu gốc, hai hành khách, trạng thái giữ, giao dịch đã xác minh và vấn đề cần xử lý. Chỉ nói “Đã gửi yêu cầu hỗ trợ” khi tool xác nhận tiếp nhận; chưa có dữ liệu để hứa sau bao nhiêu phút nhân viên phản hồi.
+
+**Quyết định — đã cân nhắc, chọn và loại:**
+
+| Phương án | Kết luận và lý do |
+|---|---|
+| Hỏi lại để khách chọn phương án đủ hai chỗ | **Chọn**, kết hợp giữ chỗ tạm theo thiết kế A. Giải quyết đúng xung đột E1–E3 mà chưa dùng quyền đổi E4. |
+| Trả lời kèm giới hạn rồi vẫn đổi BM 217 hoặc tự đổi sang sáng | **Loại**: câu cảnh báo không ngăn tách người và không tạo sự đồng ý cho chuyến khác. |
+| Dừng và chuyển người ngay mọi ca | **Loại ở luồng thường**: hai chuyến thay thế có dữ liệu rõ; bắt mọi khách chờ là không cần thiết. Dùng khi khách yêu cầu hoặc công cụ không hỗ trợ điều kiện an toàn. |
+
+**Loại lỗi và cách sửa:** lỗi **ngữ cảnh** khi bỏ qua hai hành khách và tuổi bé; lỗi **hệ thống** nếu vẫn cho lệnh đổi thiếu người chạy. Không quy lỗi người dùng vì chữ “OK”. Do đó câu nói nêu dữ kiện thay vì trách khách; cách sửa gồm hỏi chọn phương án và chặn giao dịch sai, không chỉ xin lỗi.
+
+### 3.3. KB-B — “thôi huỷ hết đi, hoàn tiền cho mình. mệt quá rồi”
+
+**Lỗi nguy hiểm:** gọi `gui_yeu_cau_hoan_ve` ngay, khiến khách mất lựa chọn đổi và không thu hồi được yêu cầu; tiền có thể xử lý tới 90 ngày, chưa rõ tiền hay voucher. Bằng chứng: E4–E5, kịch bản 6 và 12 tại §2. Không suy diễn rằng khách đang giận thì không thật sự muốn hoàn; cần hỗ trợ quyết định có đủ thông tin.
+
+**AI nói nguyên văn, khi chưa gửi hoàn:**
+
+> Tôi chưa gửi yêu cầu hoàn vé. Nếu gửi hoàn cho cả chị Nguyễn Minh An và bé Nguyễn Gia Bình, yêu cầu sẽ không huỷ lại được, chị sẽ mất lựa chọn đổi miễn phí và không còn chỗ trên chuyến thay thế được bảo đảm. Thời gian xử lý có thể tới 90 ngày. Theo thông tin hiện có, tiền thường về phương thức thanh toán gốc nhưng có trường hợp bằng voucher; tôi chưa xác minh hình thức áp dụng cho đặt chỗ TRV-7Q2K. Chị muốn xem bản nháp hoàn cho cả hai người, tiếp tục xem chuyến thay thế hay nhờ nhân viên hỗ trợ?
+
+Không nói “chị sẽ mất chỗ đang giữ” khi chưa có kết quả giữ trước đó. Nếu chuyển từ KB-A, có thể hiện song song những phương án **thực sự còn hiệu lực**; nếu bắt đầu trực tiếp từ KB-B thì tra cứu trước khi nói đã có chỗ giữ. Chính sách §2 ghi hoàn toàn bộ, nhưng chưa có giá trị giao dịch và hình thức hoàn cụ thể; không tự điền số tiền hoặc cam kết tiền mặt.
+
+**Khách thấy gì và làm gì tiếp:**
+
+1. “Chưa gửi yêu cầu hoàn vé”, tên cả hai người và khối hậu quả đặt trước hành động; không chỉ giấu trong tooltip. Có ba lựa chọn như câu AI. Ảnh B2 số ⑤–⑥ tại §5.
+2. “Xem bản nháp” chỉ tạo nội dung để khách kiểm tra. Nháp có TRV-7Q2K, tên từng người, phạm vi vé, thời gian và hình thức hoàn đã/chưa xác minh. Khách sửa phạm vi hoặc bỏ nháp mà chưa gọi tool hoàn. Ảnh B2 số ⑦.
+3. Tách bước theo A: **AI soạn, khách tự gửi** ở màn do khách điều khiển. Khi dữ liệu bắt buộc và kênh tự gửi đã được xác minh, khách tự đánh dấu đã đọc hậu quả rồi bấm nút nêu rõ hành động/phạm vi. Chat “OK” không tự bấm thay khách.
+4. Repo chưa có kênh tự gửi và chưa có mô tả tool đủ để biết hoàn theo từng người. Nếu khách đổi phạm vi thành “chỉ vé của bé” (kịch bản 11), không tự gửi cho cả đặt chỗ; chưa xác minh được thì chuyển nhân viên. Nếu chưa triển khai được kênh tự gửi, dừng ở nháp và hỗ trợ, không dựng nút giả báo đã gửi.
+5. “Bỏ bản nháp” chỉ xoá nội dung chưa gửi: “Đã bỏ bản nháp. Chưa gửi yêu cầu hoàn vé.” Đã gửi thật thì không còn bước hoàn tác. Chỉ hiển thị “Đã gửi” khi có biên nhận của kênh gửi.
+
+**Ai được báo, khi nào:** khách thấy hậu quả ngay ở phản hồi đầu, trước bước gửi. Chưa báo nhân viên chỉ vì khách bực. Nếu khách chọn hỗ trợ, thiếu dữ liệu bắt buộc hoặc không có kênh tự gửi, gọi `chuyen_nhan_vien` trong lượt xử lý đó; gửi phạm vi, câu khách gốc, trạng thái nháp, phần chưa xác minh và giao dịch đã thực hiện nếu có. Lúc chờ hiển thị “Đang gửi yêu cầu hỗ trợ”; tiếp nhận thành công mới hiển thị “Đã gửi yêu cầu hỗ trợ”; thất bại thì nói chưa gửi được và cho thử lại. Không hứa thời gian tiền về ngắn hơn E5 hoặc bịa SLA nhân viên.
+
+**Quyết định — đã cân nhắc, chọn và loại:**
+
+| Phương án | Kết luận và lý do |
+|---|---|
+| Trả lời kèm giới hạn, hỏi phạm vi và chỉ soạn nháp | **Chọn**: tôn trọng ý định hoàn, giúp khách thấy hậu quả E5 và kiểm soát bước gửi. |
+| Hỏi “Chắc chưa?” rồi AI tự gửi | **Loại**: câu hỏi chung không cho khách kiểm tra hai người nào và hậu quả gì; không giải quyết hình thức hoàn chưa rõ. |
+| Dừng và chuyển nhân viên ngay mọi yêu cầu hoàn | **Không chọn mặc định**: xem nháp vẫn hữu ích. **Chọn ở bước thực hiện** nếu thiếu kênh tự gửi, thiếu dữ liệu hoặc khách yêu cầu, thay vì cố giao dịch. |
+
+**Loại lỗi và cách sửa:** lỗi **hệ thống** là biến chat thành giao dịch không đảo được; thiếu **ngữ cảnh** nếu “hết” không được gắn với từng người và hình thức hoàn. Cảm xúc không phải lỗi người dùng. Do đó câu nói không phán xét; cách sửa tách soạn/gửi và cho kiểm tra phạm vi, không chỉ thêm lời xin lỗi.
+
+### 3.4. Ba nguyên tắc HAX và bằng chứng UX
+
+Chọn HAX của Microsoft để dùng nhất quán, không gán số G cho PAIR. Nguồn chính thức và cách áp dụng:
+
+| Nguyên tắc | Hiểu theo bài | Câu chữ/vị trí cụ thể |
+|---|---|---|
+| [G10 — Scope services when in doubt](https://www.microsoft.com/en-us/haxtoolkit/guideline/scope-services-when-in-doubt/) | Làm rõ mục tiêu hoặc thu hẹp hành động khi chưa chắc ý khách. | KB-A hỏi khách chọn BM 201/BM 205, giữ tạm nhưng chưa đổi; B1 ④. KB-B chỉ xem nháp trước khi tự gửi; B2 ⑦. |
+| [G9 — Support efficient correction](https://www.microsoft.com/en-us/haxtoolkit/guideline/support-efficient-correction/) | Cho sửa lựa chọn và có đường xử lý khi AI sai. | “Chọn lại phương án”, “Sửa phạm vi”, “Bỏ bản nháp”, “Nhờ nhân viên hỗ trợ”; B1 ④, B2 ⑦–⑧. Không hứa hoàn tác giao dịch đã gửi. |
+| [G11 — Make clear why the system did what it did](https://www.microsoft.com/en-us/haxtoolkit/guideline/make-clear-why-the-system-did-what-it-did/) | Cho khách hiểu lý do gắn với quyết định. | “Còn 1 / cần 2” B1 ②; giữ chỗ khác đổi vé B1 ③; không huỷ lại, tới 90 ngày, hình thức chưa rõ B2 ⑥. |
+
+### 3.5. Lỗi câu chữ không cứu được và nhánh phục hồi
+
+| Lỗi | Vì sao câu chữ không đủ | Thiết kế xử lý |
+|---|---|---|
+| Đổi riêng một người hoặc sai chuyến | Xin lỗi không khôi phục được vé/quyền đổi đã dùng. | Chặn thiếu người; duyệt đúng chuyến/đủ hai người; cần xác minh tool có giao dịch cả hai cùng thành công, nếu không thì chuyển người trước đổi. |
+| Giữ chỗ hết hạn hoặc số chỗ đã đổi | Lời giải thích dựa vào số cũ không tạo được chỗ. | Hạn riêng từng phương án; hết hạn vô hiệu nút xác nhận; kiểm tra lại trước lệnh đổi. |
+| Gửi hoàn sai phạm vi | E5 không có đường thu hồi. | AI không tự gửi, khách duyệt rõ từng người ở kênh tự gửi; không tách được phạm vi thì chuyển người. |
+| Tool chậm/kết quả chưa rõ | Báo thành công hoặc gửi lại có thể gây giao dịch trùng. | Hiện “Chưa xác định kết quả”, tra cứu trước khi thực hiện tiếp; không xác minh được thì chuyển người. |
+
+**Ca lạ dự phòng từ kịch bản 10:** khách nói “ơ sao đổi mình sang 9h30??? mình bảo 7h mà”. Ngay lượt nhận báo lỗi, dừng đổi/hoàn tiếp, tra cứu và bắt đầu chuyển nhân viên; không chờ khách kể lại toàn bộ. Trong lúc chưa xác minh, nói:
+
+> Tôi đang kiểm tra giao dịch vừa thực hiện và sẽ dừng các thay đổi tiếp theo. Tôi sẽ chuyển yêu cầu kiểm tra đổi nhầm cho nhân viên; hiện tôi chưa thể xác nhận đã khôi phục vé hoặc quyền đổi miễn phí.
+
+Nếu log xác nhận đã đổi sai BM 205, nói:
+
+> Xin lỗi chị, tôi đã đổi sang BM 205 lúc 09:30 thay vì BM 201 lúc 07:00 chị yêu cầu. Lần đổi miễn phí đã được dùng nên tôi không tự đổi lần nữa. Tôi đang chuyển nhân viên kiểm tra và hỗ trợ; tôi chưa thể cam kết đổi lại miễn phí.
+
+Nhân viên nhận yêu cầu gốc, biên nhận đổi, phương án mong muốn và số chỗ BM 201 từ **lần tra cứu mới nhất**, không lấy “còn 9” lúc 15:00 làm cam kết. Nếu thực tế chưa có log chứng minh lỗi, không nhận hoặc phủ nhận giao dịch khi chưa kiểm chứng. Nếu đã xác minh gửi hoàn nhầm, xin lỗi đúng lỗi, nêu không thể tự thu hồi theo E5, dừng giao dịch tiếp và chuyển người; không hứa chắc chắn phục hồi.
 
 ## §4. Mức tự chủ  (chặng 4)
 
@@ -303,8 +408,63 @@ Nhóm tách tool này thành hai việc:
 - 1–2 ảnh có đánh số; mỗi số: thể hiện gì · nguyên tắc HAX/PAIR nào · mức tự chủ nào.
 - Quyết định: cách hiện độ chắc/bằng chứng và điều khiển mức tự chủ — đã nghĩ tới cách nào khác, vì sao chọn cách này.
 
-## §6. Tốt là gì  (chặng 6 — nhẹ, bỏ được nếu thiếu giờ)
-- 3 tiêu chí Pass/Fail chấm được; thiết kế của nhóm đạt tiêu chí nào trên 2 kịch bản đắt nhất; lỗi còn lại.
+### 5.B. Bổ sung của B — câu chữ, ảnh đánh số và lập luận UX
+
+**Trạng thái bằng chứng:** repo chưa có prototype HTML/link của C. Hai ảnh dưới đây là **minh hoạ thiết kế do B dựng từ kịch bản A**, không phải ảnh chụp prototype, không chứng minh tool đã chạy. C cung cấp prototype để B thay bằng 1–2 ảnh chụp thật trước khi nộp và cập nhật kết quả §6.
+
+![B1 — Minh hoạ KB-A, chưa phải ảnh chụp prototype](phan-b/anh/01-kb-a.png)
+
+![B2 — Minh hoạ KB-B, chưa phải ảnh chụp prototype](phan-b/anh/02-kb-b.png)
+
+| Ảnh/số | Thể hiện gì | HAX | Mức tự chủ cần khớp §4 |
+|---|---|---|---|
+| B1 / ① | “Chưa đổi vé”, TRV-7Q2K, hai hành khách | G11 | Tra cứu tự làm; chưa cho phép đổi. |
+| B1 / ② | BM 217: 1 chỗ / cần 2; không có nút đổi một người | G11 | Không tách mẹ con để đáp ứng chữ “OK”. |
+| B1 / ③ | Hai phương án sáng và thời hạn giữ riêng; giữ chưa phải đổi | G11 | Theo A: tự giữ tạm khi tool hỗ trợ, chỉ báo đã giữ sau kết quả. |
+| B1 / ④ | Xem từng phương án và nhờ hỗ trợ | G10, G9 | Khách chọn; đổi thật cần duyệt rõ phương án ở bước sau. |
+| B2 / ⑤ | Nháp cho An và Bình, trạng thái chưa gửi | G11 | AI chỉ soạn. |
+| B2 / ⑥ | Không huỷ lại, tới 90 ngày, hình thức hoàn chưa rõ; mất lựa chọn đổi | G11 | Thiếu dữ liệu bắt buộc thì chưa giao dịch. |
+| B2 / ⑦ | Sửa/bỏ nháp; bước tự gửi chưa khả dụng khi thiếu xác minh | G9, G10 | Khách kiểm soát; AI không tự gửi hoàn. |
+| B2 / ⑧ | Nhờ nhân viên hỗ trợ và giới hạn phục hồi | G9 | Chuyển người theo nhu cầu/giới hạn; không hứa đảo giao dịch. |
+
+**Quyết định về bằng chứng:** đã cân nhắc phần trăm tự tin, cảnh báo chung và dữ kiện tại chỗ. Chọn số chỗ/số người, nguồn thời điểm tra cứu và trạng thái giao dịch để khách kiểm tra được. Loại “95% chắc chắn” vì chưa có số đo hiệu chuẩn; loại chỉ tô đỏ vì không giải thích được xung đột 1/2 chỗ. Số chỗ không phải bảo đảm ghế cạnh nhau.
+
+**Quyết định về điều khiển:** đã cân nhắc một nút “OK” cho toàn bộ luồng, xác nhận mọi bước và tách xem/giữ/đổi. Chọn tự tra cứu/giữ tạm theo A, khách duyệt khi đổi và tự gửi hoàn ở kênh riêng nếu có. Loại nút “OK” chung vì không rõ khách duyệt gì; loại bắt duyệt mỗi lần tra cứu vì chậm mà không giảm hậu quả đáng kể. Giữ tạm có thể hết hạn; quyền đổi không được tiêu trước xác nhận.
+
+**Ảnh cần chụp từ bản C:** ưu tiên hai trạng thái của KB-A vì đây là ca prototype chính: (1) sau tra cứu/giữ, trước khách chọn; (2) màn xác nhận đúng chuyến, đủ hai người, hậu quả và hạn giữ. Nếu C dựng thêm KB-B thì có thể dùng ảnh KB-B thay ảnh thứ hai, miễn §3 và chú thích trỏ đúng ảnh thật. Không dùng ảnh minh hoạ để khẳng định đã kiểm thử màn xác nhận.
+
+## §6. Tốt là gì — B: Vũ Đức Tâm · 2A202603522
+
+### 6.1. Ba tiêu chí Pass/Fail quan sát được
+
+| Mã | Cách kiểm tra | Pass | Fail |
+|---|---|---|---|
+| T1 — Không giao dịch ngoài xác nhận | Nhập KB-A/KB-B; quan sát màn hình và log lệnh gọi, kể cả khi mở/chọn lại/bỏ nháp. | KB-A không gọi `doi_chuyen_bay` cho BM 217/cho riêng một người; chỉ đổi phương án khách duyệt khi đủ hai người. KB-B không gọi gửi hoàn từ chat, mở nháp hoặc bỏ nháp; AI không tự gửi. | Có bất kỳ giao dịch trái điều kiện trên. Cảnh báo bằng chữ nhưng vẫn gọi tool cũng Fail. |
+| T2 — Đủ bằng chứng trước quyết định | Đối chiếu màn trước hành động với E1–E6; thử giữ chỗ hết hạn. | KB-A thấy 1 chỗ/2 người; trước đổi có tên hai người, chuyến/ngày/giờ, hạn giữ và dùng lần đổi miễn phí; hết hạn chặn. KB-B thấy phạm vi, không huỷ lại, tới 90 ngày, phương thức gốc/có thể voucher và trạng thái xác minh; thiếu dữ liệu cần thiết thì chặn gửi. | Thiếu bất kỳ mục áp dụng mà vẫn cho thực hiện; bịa chắc tiền mặt/giờ/chỗ; cho đổi khi giữ hết hạn. |
+| T3 — Sửa và phục hồi đúng trạng thái | Chọn lại chuyến, bỏ nháp; báo đổi nhầm; mô phỏng chuyển người thành công và thất bại. | Sửa/bỏ trước giao dịch không phát sinh đổi/hoàn; báo sai thì dừng các thay đổi tiếp, tra cứu và chuyển trong lượt đó. Chỉ báo đã chuyển sau tiếp nhận, lỗi có đường thử lại; không hứa hoàn tác. | Tiếp tục tự đổi/hoàn khi đang xử lý đổi nhầm; sửa/bỏ vẫn gửi; báo đã chuyển dù tool lỗi; hứa khôi phục không có khả năng. |
+
+Mỗi tiêu chí chỉ Pass khi đạt **tất cả điều kiện áp dụng cho ca đó**. Cần log/bảng hành động mock để phân biệt lời nói với hành động. Không có luồng hoặc log thì ghi “Chưa kiểm chứng”, không suy ra Pass từ ảnh tĩnh.
+
+### 6.2. Chấm thiết kế trên hai ca đắt nhất
+
+Đã rà soát các bước mô tả trong §3; **chưa chạy prototype vì repo chưa có bản C**.
+
+| Tiêu chí | KB-A: cơ chế đáp ứng trên thiết kế | KB-B: cơ chế đáp ứng trên thiết kế | Trạng thái kiểm thử |
+|---|---|---|---|
+| T1 | Chặn BM 217, giữ tạm không đổi, duyệt đúng chuyến cho cả hai. | Chat chỉ dẫn tới nháp; khách tự gửi qua kênh riêng, hoặc chuyển người. | Cả hai: chưa kiểm chứng khi chạy. |
+| T2 | Số chỗ/người, ngày/giờ cụ thể, hạn giữ riêng và hậu quả quyền miễn phí. | Phạm vi và hậu quả E5; hình thức chưa xác minh được nói rõ. | Cả hai: chưa kiểm chứng khi chạy. |
+| T3 | Chọn lại chưa đổi; kịch bản 10 dừng và chuyển người, không tự đổi lần hai. | Sửa/bỏ nháp chưa gửi; hỗ trợ khi thiếu kênh/phạm vi chưa rõ. | Cả hai: chưa kiểm chứng khi chạy. |
+
+**Kết luận trong phạm vi tài liệu:** thiết kế có cơ chế đáp ứng T1–T3 cho cả hai ca. Chưa có bằng chứng để ghi prototype đạt cả ba tiêu chí. Sau khi C dựng, B ghi Pass/Fail kèm ca chạy và kết quả thực tế vào bảng này.
+
+### 6.3. Lỗi còn lại và giới hạn
+
+- §4 còn là dàn ý; A cần chốt quyền và điều kiện tool khớp §3, đặc biệt giữ hai phương án và AI không tự gửi hoàn.
+- Chưa biết tool có giữ đồng thời hai chuyến, giữ đủ hai người và đổi cả hai cùng thành công hay không. Không có bảo đảm đổi nguyên nhóm thì cần chuyển người trước giao dịch có nguy cơ tách mẹ con.
+- Chưa có kênh khách tự gửi hoàn, dữ liệu số tiền cụ thể và hình thức áp dụng cho TRV-7Q2K. Nếu chưa xác minh, chỉ soạn nháp và chuyển người, không giả lập thành công như giao dịch thật.
+- Ảnh §5 hiện là minh hoạ, chưa kiểm tra được timeout, log, gửi trùng và lỗi công cụ. Chuyển nhân viên không bảo đảm cứu được giao dịch đã không đảo được.
+- Số chỗ lúc 15:00 có thể thay đổi; chỗ trên chuyến không bảo đảm ghế cạnh nhau. Không dùng mốc 15:00 để tự suy ra thời hạn 48 giờ bắt đầu lúc đó nếu chính sách chưa xác định.
+- Chưa có track gốc/rubric đầy đủ trong repo để đối chiếu các dữ kiện A chép; không bổ sung chính sách hãng thật từ bên ngoài vào dữ liệu giả lập.
 
 ## §7. Demo
 - Ca lạ nhận được ở demo: prototype đã làm gì, và nhóm có đổi ý gì sau ca đó không.
