@@ -416,9 +416,65 @@ Nhóm tách tool này thành hai việc:
   - Vì vậy trợ lý không bao giờ được nói "mình đã gửi yêu cầu hoàn cho bạn". Câu chữ ở §3 và prototype ở §5 phải giữ đúng lời hứa này.
 
 ## §5. Prototype  (chặng 5)
-- Link hoặc file · công cụ · phần nào mock · có lời gọi AI thật không.
-- 1–2 ảnh có đánh số; mỗi số: thể hiện gì · nguyên tắc HAX/PAIR nào · mức tự chủ nào.
-- Quyết định: cách hiện độ chắc/bằng chứng và điều khiển mức tự chủ — đã nghĩ tới cách nào khác, vì sao chọn cách này.
+
+### 5.A. Prototype — C: Đỗ Minh Hoàng · 2A202603554
+
+- **File:** [`prototype/index.html`](prototype/index.html), một file HTML, CSS và JS thuần, không thư viện, không backend. Cách chạy xem [`prototype/README.md`](prototype/README.md).
+- **Phần mock:**
+  - Dữ liệu lấy từ §2.
+  - Mọi tool là hàm JS có độ trễ giả.
+  - Có ô "Mô phỏng tool lỗi" để chạy các nhánh thất bại mà §3 và §6 yêu cầu: giữ một phần, nhả lỗi, kết quả đổi chưa rõ, chuyển nhân viên lỗi.
+  - Gửi hoàn chỉ là mô phỏng, biên nhận ghi **[MÔ PHỎNG]**.
+- **Lời gọi AI thật:** không có. Câu AI nói lấy nguyên văn §3, hội thoại đi theo chip gợi ý để demo không lệch kịch bản.
+- **Nhật ký hành động** (cuối cột trái) ghi mọi lệnh tool kèm "ai kích hoạt" (AI tự làm, khách bấm nút hay hệ thống), và cả những lần AI **không gọi** tool. Đây là log mock mà §6.1 cần để phân biệt lời nói với hành động.
+
+**Ảnh 1 — B1 · KB-A sau khi tra cứu và giữ chỗ, trước khi khách chọn** (số ①–④ khớp bảng 5.B)
+
+![Ảnh 1 — B1 sau khi giữ chỗ](prototype/anh/anh-1-b1-giu-cho.png)
+
+**Ảnh 2 — Màn xác nhận đổi vé** (`doi_chuyen_bay`, mức *khách duyệt*)
+
+![Ảnh 2 — Màn xác nhận đổi cả 2 người sang BM 201](prototype/anh/anh-2-b1-xac-nhan.png)
+
+- Chuyến gốc BM 213 bị gạch và ghi **Đã huỷ**, chuyến mới là BM 201 · 07:00 13/11. Nguyên tắc G11.
+- Hai hành khách bị khoá ở trạng thái "đổi cùng nhau". Không có ô nào để bỏ một người, nên việc tách mẹ con không có nút. Đây là luật 1 và luật 3 của `doi_chuyen_bay`.
+- Đồng hồ giữ chỗ hiện trong thẻ. Hết hạn hoặc nhả chỗ thì nút xác nhận bị khoá. G11, G9.
+- Dòng "Dùng lần đổi miễn phí duy nhất…" và dòng "Đặt chỗ cũ (chuyến đã huỷ) giữ nguyên cho tới khi bạn bấm". Câu chữ lấy từ §4.
+- Nút chính ghi rõ hành động: "Xác nhận đổi cả 2 người sang BM 201 · 07:00 ngày 13/11". Nút phụ "Chọn lại phương án". G9, G10.
+
+**Ảnh 3 — B2 · KB-B: bản nháp hoàn đã mở** (số ⑤–⑧ khớp bảng 5.B)
+
+![Ảnh 3 — B2 bản nháp hoàn vé](prototype/anh/anh-3-b2-hoan-ve.png)
+
+- ⑦: ô tick theo từng hành khách. Ba cảnh báo §4 và dòng "mất lựa chọn đổi miễn phí" nằm **ngay trên nút gửi**. Nút gửi ghi tên người được hoàn và chỉ bấm được sau khi khách tick "Tôi đã đọc". Bỏ tick một người thì nút gửi biến mất, thay bằng nút **Chuyển nhân viên** (kịch bản 11).
+- Thẻ "Hoặc vẫn đổi chuyến" đặt **trước** bản nháp. Mỗi chuyến có đồng hồ, nút Nhả chỗ và nút Xem. Đây là luật "đưa song song lựa chọn đổi" của §4.
+
+**Điều khiển không có số trên ảnh nhưng chạy được trong prototype:**
+- **Nhả chỗ** (`nha_cho_dang_giu`): chỉ báo "Đã nhả" khi tool thành công, lỗi thì báo "chưa nhả được".
+- Nhắc khi còn 5 phút.
+- Hết hạn thì chuyển sang "Giữ lại 2 chỗ", AI không tự giữ tiếp.
+- Hai chip thử T1: "ok" và tin tự xưng nhân viên. AI từ chối, nhật ký ghi "KHÔNG GỌI `doi_chuyen_bay`".
+- Ca đổi nhầm (kịch bản 10): AI dừng và tự chuyển nhân viên, kèm số chỗ từ lần tra cứu mới nhất.
+- Kết quả đổi chưa rõ: AI tra lại, không đổi lần hai, chuyển nhân viên.
+- Chuyển nhân viên lỗi thì có nút **Thử lại**.
+
+**Quyết định — cách hiện bằng chứng:**
+
+| Phương án | Kết luận |
+|---|---|
+| Chỉ để AI giải thích trong chat | **Loại.** Khách giận hoặc vội sẽ không đọc đoạn chat dài. Xung đột 1 chỗ / 2 người phải nằm ngay trên chuyến đó |
+| Phần trăm tự tin ("95% phù hợp") | **Loại** (cùng lý do với 5.B): không có số đo hiệu chuẩn, và cũng không giải thích được vì sao không đổi |
+| **Ô ghế theo số hành khách + "Còn X / cần 2" trên từng thẻ chuyến, kèm mốc "tra cứu 15:00"** | **Chọn.** Khách đếm được bằng mắt: 1 ô xanh + 1 ô đỏ nét đứt. Chữ "cần 2" gắn trực tiếp với 2 tên ở thẻ đặt chỗ. Mốc giờ nói rõ đây là số lúc tra cứu, không phải cam kết |
+
+**Quyết định — cách hiện điều khiển mức tự chủ:**
+
+| Phương án | Kết luận |
+|---|---|
+| Xác nhận đổi bằng câu hỏi trong chat ("Chị xác nhận đổi?") | **Loại.** Đúng lỗi của KB-A: chữ "ok" trông như đồng ý. §4 chốt xác nhận chỉ bằng nút |
+| Nút "Đổi" đặt thẳng trên thẻ chuyến (1 bấm là đổi) | **Loại.** Khách không thấy hậu quả (mất lần đổi miễn phí) và không thấy tên người được đổi trước khi bấm |
+| **Bấm "Xem" để mở màn xác nhận riêng, nút ghi đủ chuyến · người · giờ** | **Chọn.** Tách "xem" khỏi "đổi" (G10). Hậu quả đặt ngay cạnh nút (G11). Có "Chọn lại phương án" (G9) |
+| Việc bị cấm chỉ bị khoá (nút mờ) | **Loại.** Nút mờ vẫn gợi ý rằng việc đó có thể làm được. Cách chọn: **không render nút**, gồm BM 217, đổi riêng một người, AI gửi hoàn |
+| Đồng hồ chung cho cả hai chuyến | **Loại** theo §3: mỗi lần giữ có hạn riêng. Chọn mỗi thẻ một đồng hồ riêng |
 
 ### 5.B. Bổ sung của B — câu chữ, ảnh đánh số và lập luận UX
 
